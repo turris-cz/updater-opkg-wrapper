@@ -35,7 +35,7 @@ if custom_feed then
 				local name, feed_uri = line:match('src/gz[%s]+([^%s]+)[%s]+([^%s]+)')
 				if name and feed_uri then
 					DBG("Adding custom opkg feed " .. name .. " (" .. feed_uri .. ")")
-					Repository(name, feed_uri, {pubkey = pubkeys, ignore = {"missing"}})
+					Repository(name, feed_uri, {pubkey = pubkeys, optional = true})
 				else
 					WARN("Malformed line in customfeeds.conf:\n" .. line)
 				end
