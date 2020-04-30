@@ -11,37 +11,18 @@ if custom_feed then
 	for f in pairs(ls(root_dir .. "etc/opkg/keys")) do
 		table.insert(pubkeys, "file://" .. root_dir .. "etc/opkg/keys/" .. f)
 	end
-	-- Read ignore expressions
-	local ignore_regs = {}
-	for f in pairs(ls(root_dir .. "etc/updater/opkg-ignore")) do
-		local ignore_f = io.open(root_dir .. "etc/updater/opkg-ignore/" .. f)
-		for line in ignore_f:lines() do
-			if not line:match('^#') then
-				ignore_regs[line] = true
-			end
-		end
-	end
 	-- Read opkg feeds and register them to updater
 	for line in custom_feed:lines() do
-		if line:match('^%s*src/gz ') then
-			local not_ignored = true
-			for reg in pairs(ignore_regs) do
-				if line:match(reg) then
-					not_ignored = false
-					break
-				end
-			end
-			if not_ignored then
-				local name, feed_uri = line:match('src/gz[%s]+([^%s]+)[%s]+([^%s]+)')
-				if name and feed_uri then
-					DBG("Adding custom opkg feed " .. name .. " (" .. feed_uri .. ")")
-					Repository(name, feed_uri, {pubkey = pubkeys, optional = true})
-				else
-					WARN("Malformed line in customfeeds.conf:\n" .. line)
-				end
+		local name, feed_uri, arguments = line:match('^src/gz[%s]+([^%s]+)[%s]+([^%s]+)[%s]*(.*)$')
+		if name and feed_uri then
+			if arguments ~= "updater-ignore" then
+				DBG("Adding custom opkg feed " .. name .. " (" .. feed_uri .. ")")
+				Repository(name, feed_uri, {pubkey = pubkeys, optional = true})
 			else
-				DBG("Line from customfeeds.conf ignored:\n" .. line)
+				DBG("Skipping custom opkg feed " .. name .. " (" .. feed_uri .. ")")
 			end
+		else
+			TRACE("Line from customfeeds.conf ignored:\n" .. line)
 		end
 	end
 	custom_feed:close()
